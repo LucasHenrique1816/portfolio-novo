@@ -440,8 +440,9 @@ function drawShip(ctx, t){
   if (!intro.running){
     ctx.font = '600 14px Segoe UI, Arial';
     ctx.textAlign = 'center';
-    ctx.fillStyle = hoveredShip ? '#fff' : 'rgba(255,255,255,.75)';
-    ctx.fillText('Clique na nave para abrir o painel', 0, -ship.h*0.9 - 14);
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = hoveredShip ? '#fff' : 'rgba(255,255,255,.85)';
+    ctx.fillText('Clique na nave para abrir o painel', 0, ship.h * 0.55);
   }
 
   ctx.restore();
@@ -647,12 +648,13 @@ setInterval(()=>{
       sobre: () => tpl('tpl-sobre'),
       projetos: () => tpl('tpl-projetos'),
       tecnologias: () => tpl('tpl-tecnologias'),
-      // Projetos específicos (planetas)
-      'proj-starshop':   () => tpl('tpl-proj-starshop'),
-      'proj-orbital-ui': () => tpl('tpl-proj-orbital-ui'),
-      'proj-spaceviz':   () => tpl('tpl-proj-spaceviz'),
-      'proj-orbital-ui1': () => tpl('tpl-proj-orbital-ui1'),
-      'proj-spaceviz1':   () => tpl('tpl-proj-spaceviz1')
+      // Planetas -> projetos
+      'proj-starshop':     () => tpl('tpl-proj-jc-transporte'),   // planeta 1
+      'proj-orbital-ui':   () => tpl('tpl-proj-pegueitudo'),      // planeta 2
+      'proj-spaceviz':     () => tpl('tpl-proj-cha-do-matteo'),   // planeta 3
+      // Planetas extras abrem a lista de projetos
+      'proj-orbital-ui1':  () => tpl('tpl-projetos'),             // planeta 4
+      'proj-spaceviz1':    () => tpl('tpl-projetos')              // planeta 5
     };
 
     function setActive(section){
@@ -774,11 +776,11 @@ setInterval(()=>{
   <p>Sou Lucas Henrique, desenvolvedor web front-end apaixonado por criar interfaces responsivas, animadas e acessíveis. Gosto de transformar ideias em experiências imersivas — como este cockpit — unindo design e código.</p>
   <p>Hoje foco em React, TypeScript e animações com Canvas/WebGL. Tenho experiência com componentes reutilizáveis, design systems, performance e boas práticas de UX.</p>
   <div class="grid">
-    <span class="badge">📍 São Paulo, Brasil</span>
+    <span class="badge">📍 Guarulhos, Brasil</span>
     <span class="badge">💼 Disponível para CLT / PJ / Freelance</span>
-    <span class="badge">✉️ lucas.henrique@example.com</span>
-    <span class="badge">🔗 linkedin.com/in/lucashenrique</span>
-    <span class="badge">💻 github.com/lucashenrique</span>
+    <span class="badge">✉️ luhenrique1@hotmail.com</span>
+    <span class="badge">🔗 https://linkedin.com/in/lucas-henrique0812</span>
+    <span class="badge">💻 https://github.com/LucasHenrique1816</span>
   </div>
 </template>
 
@@ -786,58 +788,60 @@ setInterval(()=>{
   <h2>Projetos</h2>
   <div class="grid projetos">
     <article class="card">
-      <h3>StarShop (E-commerce)</h3>
-      <p>E-commerce com catálogo, carrinho e checkout simulado. Foco em performance e acessibilidade.</p>
-      <p><strong>Stack:</strong> React, TypeScript, Vite, Zustand, Styled Components</p>
-      <a href="#" target="_blank" rel="noopener">Demo • Repositório →</a>
+      <h3>JC Transportes • Landing Page</h3>
+      <p>Landing page institucional para transportadora, responsiva e leve.</p>
+      <p><strong>Stack:</strong> HTML, CSS, JavaScript</p>
+      <a href="https://jctransportes.vercel.app" target="_blank" rel="noopener">Abrir site →</a>
     </article>
     <article class="card">
-      <h3>Orbital UI (Design System)</h3>
-      <p>Biblioteca de componentes reutilizáveis com tema dark/futurista e tokens de design.</p>
-      <p><strong>Stack:</strong> Storybook, React, Radix UI, CSS Vars</p>
-      <a href="#" target="_blank" rel="noopener">Storybook • Repo →</a>
+      <h3>PegueiTudo • Checklist App</h3>
+      <p>Aplicativo simples de checklist para organizar tarefas e itens.</p>
+      <p><strong>Stack:</strong> React</p>
+      <a href="https://vercel.com/lucashenrique1816s-projects/pegueitudo" target="_blank" rel="noopener">Projeto na Vercel →</a>
     </article>
     <article class="card">
-      <h3>SpaceViz (Data + Canvas)</h3>
-      <p>Visualizações interativas de dados espaciais com Canvas/WebGL e animações suaves.</p>
-      <p><strong>Stack:</strong> TS, Canvas, regl/WebGL, D3</p>
-      <a href="#" target="_blank" rel="noopener">Live • Repo →</a>
+      <h3>Chá do Matteo • Lembrancinha Digital</h3>
+      <p>Convite/lembrancinha digital interativa para chá de bebê.</p>
+      <p><strong>Stack:</strong> HTML, CSS, React</p>
+      <a href="https://cha-do-matteo.vercel.app/" target="_blank" rel="noopener">Abrir site →</a>
     </article>
   </div>
 </template>
 
-<!-- NOVOS templates: cada planeta abre um destes -->
-<template id="tpl-proj-starshop">
-  <h2>StarShop • E-commerce</h2>
-  <p>Catálogo com filtros, carrinho e checkout simulado. Lighthouse 95+ e navegação por teclado.</p>
+<!-- Modais dos planetas (3 projetos) -->
+<template id="tpl-proj-jc-transporte">
+  <h2>JC Transportes • Landing Page</h2>
+  <p>Site institucional com foco em clareza, performance e SEO.</p>
   <ul>
-    <li>React + TypeScript + Vite</li>
-    <li>Zustand para estado</li>
-    <li>Styled Components e CSS Vars</li>
+    <li>HTML semântico e CSS modular</li>
+    <li>Interações em JavaScript</li>
+    <li>Hospedagem na Vercel</li>
   </ul>
-  <p><a href="#" target="_blank" rel="noopener">Demo</a> • <a href="#" target="_blank" rel="noopener">Repositório</a></p>
+  <p><a href="https://jctransportes.vercel.app" target="_blank" rel="noopener">Visitar site</a></p>
 </template>
 
-<template id="tpl-proj-orbital-ui">
-  <h2>Orbital UI • Design System</h2>
-  <p>Componentes acessíveis com tokens, temas e documentação.</p>
+<template id="tpl-proj-pegueitudo">
+  <h2>PegueiTudo • Checklist App</h2>
+  <p>Organize tarefas e itens com uma UI direta e responsiva.</p>
   <ul>
-    <li>Storybook + Radix UI</li>
-    <li>Testes visuais e unitários</li>
-    <li>Pacotes versionados</li>
+    <li>React com componentes reutilizáveis</li>
+    <li>Estado local simples</li>
+    <li>Build/Deploy na Vercel</li>
   </ul>
-  <p><a href="#" target="_blank" rel="noopener">Storybook</a> • <a href="#" target="_blank" rel="noopener">Repositório</a></p>
+  <p><a href="https://vercel.com/lucashenrique1816s-projects/pegueitudo" target="_blank" rel="noopener">Abrir projeto na Vercel</a></p>
 </template>
 
-<template id="tpl-proj-spaceviz">
-  <h2>SpaceViz • Data viz</h2>
-  <p>Visualizações rápidas com Canvas/WebGL e transições suaves.</p>
+<template id="tpl-proj-cha-do-matteo">
+  <h2>Chá do Matteo • Lembrancinha Digital</h2>
+  <p>Convite digital carinhoso com interações e layout responsivo.</p>
   <ul>
-    <li>regl/WebGL + D3</li>
-    <li>Layouts interativos</li>
-    <li>Foco em performance</li>
+    <li>HTML, CSS e React</li>
+    <li>Compatível com mobile</li>
+    <li>Hospedado na Vercel</li>
   </ul>
-  <p><a href="#" target="_blank" rel="noopener">Live</a> • <a href="#" target="_blank" rel="noopener">Repositório</a></p>
+  <p><a href="https://cha-do-matteo.vercel.app/" target="_blank" rel="noopener">Visitar site</a></p>
 </template>
+
+<!-- Removidos: tpl-proj-starshop, tpl-proj-orbital-ui, tpl-proj-spaceviz -->
 
 </body></html>
