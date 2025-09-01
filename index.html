@@ -1,0 +1,843 @@
+<html lang="pt-BR"><head>
+<meta charset="UTF-8">
+<title>Portfolio Lucas Henrique</title>
+<style>
+  body { margin:0; overflow:hidden; background:#000; }
+  canvas { display:block; }
+  #secret {
+    position:absolute; top:50%; left:50%;
+    transform:translate(-50%, -50%);
+    font-size:3em; color:rgba(255,255,255,0);
+    text-shadow:0 0 10px rgba(255,255,255,0);
+    transition:1s;
+    pointer-events:none;
+  }
+  #secret.visible { color:white; text-shadow:0 0 20px #fff; }
+
+  /* contador do secret */
+  #secret .countdown{
+    display:block;
+    margin-top:12px;
+    font-size:.5em;
+    letter-spacing:2px;
+    opacity:.95;
+    text-align:center;
+  }
+</style>
+<style>
+:root{
+  --bg:#0a0f14; --panel:#0f1620; --accent:#27e1ff; --accent2:#68ff9b; --text:#e6f1ff;
+  --scan:#0b1118; --glow:0 0 12px rgba(39,225,255,.6), 0 0 24px rgba(39,225,255,.35);
+}
+*{box-sizing:border-box}
+body{color:var(--text);font-family:Inter,Segoe UI,Roboto,Arial,Helvetica,sans-serif}
+.hidden{display:none !important}
+
+/* Overlay */
+.cockpit-overlay{
+  position:fixed; inset:0; display:grid; place-items:center;
+  background:rgba(0,0,0,.6); backdrop-filter:blur(3px); z-index:9999;
+}
+
+/* Janela do cockpit */
+.cockpit{
+  width:min(92vw,1000px); height:min(86vh,720px); display:grid; grid-template-rows:auto 1fr auto;
+  background:linear-gradient(180deg,#0b1118 0%, #0a0f14 100%);
+  border:1px solid rgba(39,225,255,.35); border-radius:14px; box-shadow:var(--glow);
+  position:relative; overflow:hidden;
+}
+.cockpit::before{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:repeating-linear-gradient(
+    to bottom, rgba(255,255,255,.035) 0 1px, transparent 1px 3px
+  );
+  mix-blend-mode:overlay;
+}
+
+/* Header */
+.cockpit__header{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:14px 16px; border-bottom:1px solid rgba(39,225,255,.25);
+  background:linear-gradient(180deg,rgba(39,225,255,.06),transparent);
+}
+.cockpit__title{
+  display:flex; align-items:center; gap:10px; font-weight:600; letter-spacing:.5px;
+}
+.cockpit__led{
+  width:10px; height:10px; border-radius:50%; background:var(--accent2); box-shadow:0 0 10px var(--accent2);
+}
+.cockpit__close{
+  background:#101821; color:var(--text); border:1px solid rgba(39,225,255,.35);
+  padding:8px 12px; border-radius:10px; cursor:pointer; transition:.15s;
+}
+.cockpit__close:hover{ transform:translateY(-1px); box-shadow:var(--glow) }
+
+/* Corpo */
+.cockpit__body{
+  display:grid; grid-template-columns: 220px 1fr; min-height:0;
+}
+@media (max-width: 780px){
+  .cockpit__body{ grid-template-columns:1fr }
+}
+
+/* Sidebar/menu */
+.cockpit__nav{
+  border-right:1px solid rgba(39,225,255,.18); padding:12px; min-height:0;
+  background:linear-gradient(180deg,rgba(27,213,255,.04),transparent);
+}
+.cockpit__nav h4{
+  margin:4px 6px 10px; font-size:.85rem; opacity:.8; text-transform:uppercase; letter-spacing:.08rem;
+}
+.tablist{ display:flex; flex-direction:column; gap:8px; }
+.tab{
+  display:flex; align-items:center; gap:10px; width:100%;
+  background:#0f1620; border:1px solid rgba(39,225,255,.25);
+  padding:10px 12px; border-radius:10px; color:var(--text); cursor:pointer; text-align:left;
+}
+.tab[data-active="true"]{
+  border-color:var(--accent); outline:1px solid rgba(39,225,255,.45); box-shadow:var(--glow);
+  background:linear-gradient(180deg,rgba(39,225,255,.05),#0f1620 60%);
+}
+
+/* Conteúdo */
+.cockpit__content{
+  min-height:0; overflow:auto; padding:16px;
+}
+.panel{
+  background:#0f1620; border:1px solid rgba(39,225,255,.25); border-radius:12px; padding:16px;
+  min-height:100%;
+}
+.panel h2{ margin-top:0 }
+.badge{
+  display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px;
+  border:1px solid rgba(39,225,255,.35); background:rgba(39,225,255,.06); margin:4px 6px 0 0;
+}
+.grid{ display:grid; gap:12px }
+.grid.projetos{ grid-template-columns:repeat(auto-fit,minmax(220px,1fr)) }
+.card{
+  padding:12px; border:1px solid rgba(39,225,255,.25); border-radius:10px; background:#0b1118;
+}
+.card h3{ margin:6px 0 8px; font-size:1rem }
+
+/* Footer */
+.cockpit__footer{
+  display:flex; justify-content:space-between; align-items:center; gap:12px;
+  border-top:1px solid rgba(39,225,255,.18); padding:10px 14px; font-size:.85rem; opacity:.85;
+}
+
+/* Acessibilidade foco */
+:focus-visible{ outline:2px solid var(--accent) ; outline-offset:2px }
+</style>
+</head>
+<body>
+<canvas id="space" width="811" height="633" style="cursor: default;"></canvas>
+<div id="secret" class="">Lucas Henrique-Web Developer</div>
+<script>
+const canvas = document.getElementById("space");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let mouse = { x:null, y:null };
+window.addEventListener("mousemove", e => { mouse.x=e.clientX; mouse.y=e.clientY; });
+
+window.addEventListener("resize", () => { canvas.width=window.innerWidth; canvas.height=window.innerHeight; });
+
+// ================= NEBULOSA =================
+const nebula = [];
+
+// ================= ESTRELAS =================
+const stars=[];
+for(let i=0;i<200;i++){
+  stars.push({
+    x: Math.random()*canvas.width,
+    y: Math.random()*canvas.height,
+    radius: Math.random()*1.5,
+    alpha: Math.random(),
+    speed: 0.01+Math.random()*0.02
+  });
+}
+
+// ================= COMETAS =================
+let comets=[];
+function spawnComet(){
+  comets.push({
+    x: -100, y: Math.random()*canvas.height/2,
+    vx: 5+Math.random()*3, vy: 2+Math.random()*2,
+    length: 150+Math.random()*100, opacity:1
+  });
+  setTimeout(spawnComet, 4000+Math.random()*2000);
+}
+spawnComet();
+
+// ================= PLANETAS (PARALLAX) =================
+const planets = [
+  { key:'proj-starshop',    label:'StarShop',    img:new Image(), x:0, y:0, size:0, depth:0.02 },
+  { key:'proj-orbital-ui',  label:'Orbital UI',  img:new Image(), x:0, y:0, size:0, depth:0.05 },
+  { key:'proj-spaceviz',    label:'SpaceViz',    img:new Image(), x:0, y:0, size:0, depth:0.10 },
+   { key:'proj-orbital-ui1',  label:'Orbital UI1',  img:new Image(), x:0, y:0, size:0, depth:0.15 },
+  { key:'proj-spaceviz1',    label:'SpaceViz1',    img:new Image(), x:0, y:0, size:0, depth:0.20 }
+];
+// Opcional: se tiver assets, troque os src abaixo
+planets[0].img.src = "planet1.png";
+planets[1].img.src = "planet2.png";
+planets[2].img.src = "planet3.png";
+planets[3].img.src = "planet4.png";
+planets[4].img.src = "planet5.png";
+
+// Parallax do mouse (necessário para planetIndexAt)
+let parallaxMouse = { x:0, y:0 };
+window.addEventListener("mousemove", e=>{
+  parallaxMouse.x = (e.clientX/window.innerWidth - 0.5) * 2;
+  parallaxMouse.y = (e.clientY/window.innerHeight - 0.5) * 2;
+});
+
+// Layout responsivo com posições manuais (5 planetas), espalhados pelos cantos
+function layoutPlanets(){
+  const w = canvas.width, h = canvas.height;
+  const isMobile = window.innerWidth <= 780;
+  const base = Math.min(w, h);
+
+  // Posições em porcentagem da tela (c = coluna/x, r = linha/y)
+  // Desktop: TL, TR, BL, BR, centro-inferior
+  const positionsDesktop = [
+    { c: 0.12, r: 0.34 }, // top-left
+    { c: 0.88, r: 0.30 }, // top-right
+    { c: 0.18, r: 0.78 }, // bottom-left
+    { c: 0.84, r: 0.84 }, // bottom-right
+    { c: 0.56, r: 0.72 }  // centro inferior (fora do topo central)
+  ];
+
+  // Mobile: evita o topo (nave em ~20%), distribui laterais e base
+  const positionsMobile = [
+    { c: 0.14, r: 0.44 }, // upper-left
+    { c: 0.86, r: 0.40 }, // upper-right
+    { c: 0.18, r: 0.78 }, // bottom-left
+    { c: 0.82, r: 0.86 }, // bottom-right
+    { c: 0.50, r: 0.90 }  // centro bem embaixo
+  ];
+
+  const positions = isMobile ? positionsMobile : positionsDesktop;
+
+  // Tamanhos variados para dar profundidade
+  const sizes = (isMobile
+    ? [0.15, 0.28, 0.18, 0.15, 0.25]
+    : [0.18, 0.35, 0.25, 0.16, 0.30]
+  ).map(s => Math.max(72, Math.floor(base * s)));
+
+  planets.forEach((p, i) => {
+    const pos = positions[i % positions.length];
+    const s = sizes[i % sizes.length];
+    p.size = s;
+    p.x = Math.floor(w * pos.c - s / 2);
+    p.y = Math.floor(h * pos.r - s / 2);
+  });
+}
+layoutPlanets();
+window.addEventListener("resize", layoutPlanets);
+
+// detecção de hover/click sobre planetas (cursor pointer)
+function planetIndexAt(mx, my){
+  for(let i=planets.length-1;i>=0;i--){
+    const p = planets[i];
+    const offsetX=parallaxMouse.x*p.depth*100;
+    const offsetY=parallaxMouse.y*p.depth*100;
+    const cx = p.x + offsetX + p.size/2;
+    const cy = p.y + offsetY + p.size/2;
+    const dx = mx - cx;
+    const dy = my - cy;
+    const r = p.size/2;
+    if (dx*dx + dy*dy <= r*r) return i;
+  }
+  return -1;
+}
+let hoveredPlanetIndex = -1;
+/* Nave (ship) hover será definido adiante */
+let hoveredShip = false;
+
+canvas.addEventListener('mousemove', (e)=>{
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  hoveredPlanetIndex = planetIndexAt(mx, my);
+  hoveredShip = isOverShip(mx, my);
+  canvas.style.cursor = (hoveredPlanetIndex>=0 || hoveredShip) ? 'pointer' : 'default';
+});
+
+// abertura do cockpit ao clicar em planeta OU na nave
+canvas.addEventListener('click', (e)=>{
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  // nave tem prioridade de clique
+  if (isOverShip(mx, my)) {
+    if (window.COCKPIT && typeof window.COCKPIT.open === 'function'){
+      window.COCKPIT.open('sobre');
+    } else {
+      const ev = new CustomEvent('open-cockpit', { detail: { section: 'sobre' }});
+      window.dispatchEvent(ev);
+      document.dispatchEvent(ev);
+    }
+    return;
+  }
+
+  const idx = planetIndexAt(mx, my);
+  if (idx>=0){
+    const p = planets[idx];
+    const section = p.key; // cada planeta aponta para um projeto específico
+    if (window.COCKPIT && typeof window.COCKPIT.open === 'function'){
+      window.COCKPIT.open(section);
+    } else {
+      const ev = new CustomEvent('open-cockpit', { detail: { section }});
+      window.dispatchEvent(ev);
+      document.dispatchEvent(ev);
+    }
+  }
+});
+
+// ================= ASTRONAUTA =================
+const astroImg = new Image();
+astroImg.src = "astronaut.png"; // fundo transparente
+let astro = { x:canvas.width/2, y:canvas.height/2, vx:2, vy:1.5, radius:35, size:100, angle:0, dAngle:0.01 };
+
+// Mantém proporções do tamanho do astronauta de forma responsiva
+function layoutAstronaut(){
+  const base = Math.min(canvas.width, canvas.height);
+  // escala suave, com limites
+  astro.radius = Math.round(Math.max(24, Math.min(56, base * 0.045)));
+}
+layoutAstronaut();
+window.addEventListener('resize', layoutAstronaut);
+
+// Auto-piloto no mobile: astronauta flutua e se move sozinho
+const autoPilot = {
+  enabled: false,
+  target: { x: canvas.width*0.7, y: canvas.height*0.5 },
+  nextChangeAt: 0
+};
+function pickNewTarget(){
+  const margin = 40;
+  autoPilot.target.x = margin + Math.random() * (canvas.width - margin*2);
+  autoPilot.target.y = margin + Math.random() * (canvas.height - margin*2);
+  autoPilot.nextChangeAt = performance.now() + 2500 + Math.random()*2500;
+}
+function setMobileMode(){
+  const mobile = window.innerWidth <= 780;
+  if (mobile && !autoPilot.enabled){
+    autoPilot.enabled = true;
+    pickNewTarget();
+  } else if (!mobile && autoPilot.enabled){
+    autoPilot.enabled = false;
+  }
+}
+setMobileMode();
+window.addEventListener('resize', setMobileMode);
+
+// ================= NAVE (principal) =================
+const shipImg = new Image();
+shipImg.src = 'nave.png';
+
+const ship = {
+  x: () => canvas.width/2,
+  // meio (x) e parte superior (y ~ 20% da tela, com mínimo)
+  y: () => Math.max(120, canvas.height * 0.20),
+  w: 180,
+  h: 100,
+  t: 0
+};
+
+function layoutShip(){
+  if (shipImg.naturalWidth > 0) {
+    ship.w = Math.round(Math.max(80, Math.min(180, canvas.width * 0.18)));
+    ship.h = Math.round(ship.w * (shipImg.naturalHeight / shipImg.naturalWidth));
+  }
+}
+shipImg.onload = layoutShip;
+window.addEventListener('resize', layoutShip);
+layoutShip();
+
+// Pré‑exibição do secret (10s antes da animação da nave)
+const prelude = { active: true, t0: null, duration: 10000 };
+
+// Intro (animação inicial: nave sobe, astronauta sai)
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+function lerp(a,b,t){ return a + (b-a)*t; }
+function easeOutCubic(t){ return 1 - Math.pow(1 - t, 3); }
+
+const intro = {
+  running: true,
+  phase: 'ship-in',
+  t0: null,
+  shipY: canvas.height + 200,
+  shipStartY: canvas.height + 200,
+  shipTargetY: Math.max(120, canvas.height * 0.20),
+  durationShip: 1600,
+  astroVisible: false,
+  astroT0: 0,
+  astroDuration: 1200,
+  astroFrom: { x: 0, y: 0 },
+  astroTo:   { x: 0, y: 0 }
+};
+
+function layoutIntro(){
+  intro.shipStartY = canvas.height + Math.max(200, ship.h);
+  intro.shipTargetY = Math.max(120, canvas.height * 0.20);
+  if (intro.t0 === null) {
+    intro.shipY = intro.shipStartY;
+  }
+}
+layoutIntro();
+window.addEventListener('resize', layoutIntro);
+
+function getShipY(){
+  return intro.running ? intro.shipY : ship.y();
+}
+
+function isOverShip(mx, my){
+  const cx = ship.x(), cy = getShipY();
+  const r = Math.max(ship.w, ship.h) * 0.5; // área circular de clique
+  const dx = mx - cx, dy = my - cy;
+  return (dx*dx + dy*dy) <= r*r;
+}
+
+function drawShip(ctx, t){
+  const cx = ship.x(), cy = getShipY();
+  const bob = Math.sin(t*0.002)*4;
+  const tilt = Math.sin(t*0.0015)*0.04;
+
+  ctx.save();
+  ctx.translate(cx, cy + bob);
+  ctx.rotate(tilt);
+
+  // halo quando hover
+  if (hoveredShip){
+    ctx.strokeStyle = 'rgba(39,225,255,.85)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, Math.max(ship.w, ship.h)*0.58, 0, Math.PI*2);
+    ctx.stroke();
+  }
+
+  // glow suave atrás
+  const g = ctx.createRadialGradient(0,0,10, 0,0, Math.max(ship.w, ship.h));
+  g.addColorStop(0,'rgba(39,225,255,0.20)');
+  g.addColorStop(1,'rgba(39,225,255,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(0,0, Math.max(ship.w, ship.h)*0.9, 0, Math.PI*2); ctx.fill();
+
+  // imagem da nave (fallback simples se não carregar)
+  if (shipImg.complete && shipImg.naturalWidth > 0){
+    ctx.drawImage(shipImg, -ship.w/2, -ship.h/2, ship.w, ship.h);
+  } else {
+    ctx.fillStyle = '#b9d7ff';
+    ctx.beginPath();
+    ctx.ellipse(0,0, ship.w*0.5, ship.h*0.5, 0, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  // dica (só quando intro acabar)
+  if (!intro.running){
+    ctx.font = '600 14px Segoe UI, Arial';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = hoveredShip ? '#fff' : 'rgba(255,255,255,.75)';
+    ctx.fillText('Clique na nave para abrir o painel', 0, -ship.h*0.9 - 14);
+  }
+
+  ctx.restore();
+}
+
+// ================= ANIMAÇÃO =================
+function update(){
+  const t = performance.now();
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // nebulosa
+  nebula.forEach(p=>{
+    ctx.beginPath();
+    ctx.fillStyle=p.color;
+    ctx.arc(p.x + (mouse.x ? (mouse.x-canvas.width/2)*0.002 : 0),
+            p.y + (mouse.y ? (mouse.y-canvas.height/2)*0.002 : 0),
+            p.radius,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // estrelas
+  stars.forEach(s=>{
+    s.alpha += s.speed*(Math.random()>0.5?1:-1);
+    if(s.alpha<=0) s.alpha=0.1;
+    if(s.alpha>=1) s.alpha=1;
+    ctx.beginPath();
+    ctx.arc(s.x,s.y,s.radius,0,Math.PI*2);
+    ctx.fillStyle=`rgba(255,255,255,${s.alpha})`;
+    ctx.fill();
+  });
+
+  // cometas
+  comets.forEach((c,i)=>{
+    ctx.beginPath();
+    const grad=ctx.createLinearGradient(c.x,c.y,c.x-c.length,c.y-c.length/3);
+    grad.addColorStop(0,`rgba(255,255,255,${c.opacity})`);
+    grad.addColorStop(1,"rgba(255,255,255,0)");
+    ctx.strokeStyle=grad; ctx.lineWidth=2;
+    ctx.moveTo(c.x,c.y);
+    ctx.lineTo(c.x-c.length,c.y-c.length/3);
+    ctx.stroke();
+    c.x+=c.vx; c.y+=c.vy; c.opacity-=0.01;
+    if(c.x>canvas.width+200||c.opacity<=0) comets.splice(i,1);
+  });
+
+  // planetas (parallax)
+  planets.forEach((p, i)=>{
+    const offsetX=parallaxMouse.x*p.depth*100;
+    const offsetY=parallaxMouse.y*p.depth*100;
+    const px = p.x+offsetX, py = p.y+offsetY;
+    const canDrawImg = p.img && p.img.complete && p.img.naturalWidth > 0;
+    if (canDrawImg){
+      ctx.drawImage(p.img, px, py, p.size, p.size);
+    } else {
+      const r = p.size/2;
+      const cx = px + r, cy = py + r;
+      const g = ctx.createRadialGradient(cx, cy, r*0.2, cx, cy, r);
+      g.addColorStop(0, 'rgba(104,255,155,0.9)');
+      g.addColorStop(1, 'rgba(39,225,255,0.15)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI*2);
+      ctx.fill();
+    }
+    if (hoveredPlanetIndex === i){
+      ctx.strokeStyle = 'rgba(39,225,255,.8)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(px + p.size/2, py + p.size/2, p.size*0.55, 0, Math.PI*2);
+      ctx.stroke();
+    }
+  });
+
+  // PRELUDE: mantém o secret por 10s, depois esconde e inicia a intro
+  if (prelude.t0 === null) prelude.t0 = t;
+  if (prelude.active){
+    const sec = document.getElementById('secret');
+    if (sec) sec.classList.add('visible');
+
+    if (t - prelude.t0 < prelude.duration){
+      requestAnimationFrame(update);
+      return;
+    } else {
+      prelude.active = false;
+      const sec2 = document.getElementById('secret');
+      if (sec2) sec2.classList.remove('visible');
+      intro.t0 = t; // agora inicia a animação da nave
+    }
+  }
+
+  // Animação de intro (nave sobe, astronauta sai)
+  if (intro.running){
+    if (intro.phase === 'ship-in'){
+      const p = clamp((t - intro.t0) / intro.durationShip, 0, 1);
+      const k = easeOutCubic(p);
+      intro.shipY = lerp(intro.shipStartY, intro.shipTargetY, k);
+      if (p >= 1){
+        intro.phase = 'astro-out';
+        intro.astroT0 = t;
+        intro.astroVisible = true;
+        const sx = ship.x();
+        const sy = intro.shipY;
+        intro.astroFrom = { x: sx, y: sy + ship.h*0.05 };
+        const dx = Math.min(canvas.width*0.18, 220);
+        const dy = Math.min(canvas.height*0.25, 220);
+        intro.astroTo = { x: sx + dx, y: sy + dy };
+        astro.x = intro.astroFrom.x;
+        astro.y = intro.astroFrom.y;
+        astro.vx = 0; astro.vy = 0;
+      }
+    } else if (intro.phase === 'astro-out'){
+      const p = clamp((t - intro.astroT0) / intro.astroDuration, 0, 1);
+      const k = easeOutCubic(p);
+      const wobble = Math.sin(p*Math.PI*2)*6;
+      astro.x = lerp(intro.astroFrom.x, intro.astroTo.x, k);
+      astro.y = lerp(intro.astroFrom.y, intro.astroTo.y, k) + wobble;
+      astro.angle += 0.01;
+      if (p >= 1){
+        intro.running = false;
+        astro.vx = 0.4;
+        astro.vy = 0.25;
+      }
+    }
+  }
+
+  // Física do astronauta (só após a intro)
+  if (!intro.running){
+    if (autoPilot.enabled){
+      const dx = autoPilot.target.x - astro.x;
+      const dy = autoPilot.target.y - astro.y;
+      const dist = Math.hypot(dx, dy);
+      astro.vx += (dx / Math.max(1000, dist)) * 0.1;
+      astro.vy += (dy / Math.max(1000, dist)) * 0.1;
+      astro.vy += Math.sin(t * 0.003) * 0.12;
+      if (dist < 24 || t > autoPilot.nextChangeAt) pickNewTarget();
+    } else {
+      if(mouse.x && mouse.y){
+        const dx=astro.x-mouse.x;
+        const dy=astro.y-mouse.y;
+        const dist=Math.sqrt(dx*dx+dy*dy);
+        if(dist<150){ astro.vx+=dx/500; astro.vy+=dy/500; }
+      }
+    }
+    astro.x+=astro.vx; astro.y+=astro.vy; astro.angle+=astro.dAngle;
+    astro.vx*=0.985; astro.vy*=0.985;
+    if(astro.x-astro.radius<0||astro.x+astro.radius>canvas.width) astro.vx*=-1;
+    if(astro.y-astro.radius<0||astro.y+astro.radius>canvas.height) astro.vy*=-1;
+  }
+
+  // Desenho do astronauta e da nave
+  if (!intro.running || intro.astroVisible){
+    ctx.save();
+    ctx.translate(astro.x,astro.y);
+    ctx.rotate(astro.angle);
+    ctx.drawImage(astroImg,-astro.radius,-astro.radius,astro.radius*2,astro.radius*2);
+    ctx.restore();
+  }
+  drawShip(ctx, t);
+
+  requestAnimationFrame(update);
+}
+
+// Inicia a animação mesmo se a imagem não carregar
+if (astroImg.complete) {
+  requestAnimationFrame(update);
+} else {
+  astroImg.onload = () => requestAnimationFrame(update);
+  astroImg.onerror = () => requestAnimationFrame(update);
+}
+
+ // mensagem secreta
+setInterval(()=>{
+  const sec = document.getElementById("secret");
+  if (!sec) return;
+  // Durante o prelude mantém visível; depois oculta
+  if (prelude && prelude.active){
+    sec.classList.add("visible");
+  } else {
+    sec.classList.remove("visible");
+  }
+},300);
+
+</script>
+<script>
+// Cockpit modal JS isolado para não interferir na animação
+(function(){
+  function initCockpit(){
+    const overlay = document.getElementById('cockpit-overlay');
+    const panel = document.getElementById('cockpit-panel');
+    const contentMain = document.getElementById('cockpit-content');
+    const breadcrumb = document.getElementById('cockpit-breadcrumb');
+    const closeBtn = document.getElementById('cockpit-close');
+    const tabs = Array.from(document.querySelectorAll('.tablist .tab'));
+    const sections = ['sobre','projetos','tecnologias'];
+
+    let lastTrigger = null;
+
+    function tpl(id){
+      const t = document.getElementById(id);
+      return t ? t.innerHTML : '<p>Seção em construção.</p>';
+    }
+    const contentBySection = {
+      sobre: () => tpl('tpl-sobre'),
+      projetos: () => tpl('tpl-projetos'),
+      tecnologias: () => tpl('tpl-tecnologias'),
+      // Projetos específicos (planetas)
+      'proj-starshop':   () => tpl('tpl-proj-starshop'),
+      'proj-orbital-ui': () => tpl('tpl-proj-orbital-ui'),
+      'proj-spaceviz':   () => tpl('tpl-proj-spaceviz'),
+      'proj-orbital-ui1': () => tpl('tpl-proj-orbital-ui1'),
+      'proj-spaceviz1':   () => tpl('tpl-proj-spaceviz1')
+    };
+
+    function setActive(section){
+      tabs.forEach(t => t.dataset.active = (t.dataset.section === section) ? 'true' : 'false');
+      panel.innerHTML = (contentBySection[section] || (()=>'<p>Seção não encontrada.</p>'))();
+      breadcrumb.textContent = `/${section}`;
+    }
+
+    function openCockpit(initialSection='sobre', triggerEl=null){
+      lastTrigger = triggerEl;
+      overlay.classList.remove('hidden');
+      overlay.setAttribute('aria-hidden','false');
+      document.body.style.overflow = 'hidden';
+      setActive(initialSection);
+      setTimeout(()=> contentMain.focus(), 0);
+    }
+
+    function closeCockpit(){
+      overlay.classList.add('hidden');
+      overlay.setAttribute('aria-hidden','true');
+      document.body.style.overflow = '';
+      if (lastTrigger && typeof lastTrigger.focus === 'function'){
+        lastTrigger.focus();
+      }
+    }
+
+    // Clique fora fecha
+    overlay.addEventListener('click', (e)=>{
+      const cockpit = e.currentTarget.querySelector('.cockpit');
+      if (!cockpit.contains(e.target)) closeCockpit();
+    });
+    closeBtn.addEventListener('click', closeCockpit);
+
+    // Tabs
+    tabs.forEach(tab=>{
+      tab.addEventListener('click', ()=>{ setActive(tab.dataset.section); });
+      tab.addEventListener('keydown', (e)=>{
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+          e.preventDefault();
+          const idx = tabs.indexOf(tab);
+          const next = e.key === 'ArrowDown' ? (idx+1)%tabs.length : (idx-1+tabs.length)%tabs.length;
+          tabs[next].focus();
+        }
+        if (e.key === 'Enter' || e.key === ' '){
+          e.preventDefault(); setActive(tab.dataset.section);
+        }
+      });
+    });
+
+    // ESC fecha
+    window.addEventListener('keydown', (e)=>{
+      if (e.key === 'Escape' && !overlay.classList.contains('hidden')) closeCockpit();
+    });
+
+    // Recebe evento do canvas para abrir (janela/documento)
+    function handleOpenEvt(e){
+      const section = (e.detail && e.detail.section) || 'sobre';
+      openCockpit(section, null);
+    }
+    window.addEventListener('open-cockpit', handleOpenEvt);
+    document.addEventListener('open-cockpit', handleOpenEvt);
+
+    // expõe API global segura
+    window.COCKPIT = {
+      open: (section='sobre') => openCockpit(section, null),
+      close: () => closeCockpit(),
+      setActive: (section) => setActive(section),
+      isOpen: () => !overlay.classList.contains('hidden')
+    };
+  }
+
+  if (document.readyState === 'loading'){
+    window.addEventListener('DOMContentLoaded', initCockpit);
+  } else {
+    initCockpit();
+  }
+})();
+</script>
+
+<!-- Overlay + Cockpit -->
+<div id="cockpit-overlay" class="cockpit-overlay hidden" aria-hidden="true">
+  <div class="cockpit" role="dialog" aria-modal="true" aria-labelledby="cockpit-title">
+    <div class="cockpit__header">
+      <div class="cockpit__title">
+        <span class="cockpit__led" aria-hidden="true"></span>
+        <span id="cockpit-title">Painel da Nave • Portfólio</span>
+      </div>
+      <button class="cockpit__close" type="button" id="cockpit-close" aria-label="Fechar">✕</button>
+    </div>
+
+    <div class="cockpit__body">
+      <aside class="cockpit__nav">
+        <h4>Seções</h4>
+        <nav class="tablist" role="tablist" aria-label="Seções do portfólio">
+          <button class="tab" role="tab" data-section="sobre" data-active="true">👨&zwj;🚀 Sobre mim</button>
+          <button class="tab" role="tab" data-section="projetos">🛰️ Projetos</button>
+          <button class="tab" role="tab" data-section="tecnologias">🛠️ Tecnologias</button>
+        </nav>
+      </aside>
+
+      <main class="cockpit__content" id="cockpit-content" tabindex="-1">
+        <section class="panel" id="cockpit-panel">
+          <!-- conteúdo carrega aqui -->
+        </section>
+      </main>
+    </div>
+
+    <div class="cockpit__footer">
+      <div>STATUS: Online • Oxigênio nominal</div>
+      <div id="cockpit-breadcrumb">/sobre</div>
+    </div>
+  </div>
+  
+</div>
+
+<!-- Templates de conteúdo (edite com seus dados) -->
+<template id="tpl-sobre">
+  <h2>Sobre mim</h2>
+  <p>Sou Lucas Henrique, desenvolvedor web front-end apaixonado por criar interfaces responsivas, animadas e acessíveis. Gosto de transformar ideias em experiências imersivas — como este cockpit — unindo design e código.</p>
+  <p>Hoje foco em React, TypeScript e animações com Canvas/WebGL. Tenho experiência com componentes reutilizáveis, design systems, performance e boas práticas de UX.</p>
+  <div class="grid">
+    <span class="badge">📍 São Paulo, Brasil</span>
+    <span class="badge">💼 Disponível para CLT / PJ / Freelance</span>
+    <span class="badge">✉️ lucas.henrique@example.com</span>
+    <span class="badge">🔗 linkedin.com/in/lucashenrique</span>
+    <span class="badge">💻 github.com/lucashenrique</span>
+  </div>
+</template>
+
+<template id="tpl-projetos">
+  <h2>Projetos</h2>
+  <div class="grid projetos">
+    <article class="card">
+      <h3>StarShop (E-commerce)</h3>
+      <p>E-commerce com catálogo, carrinho e checkout simulado. Foco em performance e acessibilidade.</p>
+      <p><strong>Stack:</strong> React, TypeScript, Vite, Zustand, Styled Components</p>
+      <a href="#" target="_blank" rel="noopener">Demo • Repositório →</a>
+    </article>
+    <article class="card">
+      <h3>Orbital UI (Design System)</h3>
+      <p>Biblioteca de componentes reutilizáveis com tema dark/futurista e tokens de design.</p>
+      <p><strong>Stack:</strong> Storybook, React, Radix UI, CSS Vars</p>
+      <a href="#" target="_blank" rel="noopener">Storybook • Repo →</a>
+    </article>
+    <article class="card">
+      <h3>SpaceViz (Data + Canvas)</h3>
+      <p>Visualizações interativas de dados espaciais com Canvas/WebGL e animações suaves.</p>
+      <p><strong>Stack:</strong> TS, Canvas, regl/WebGL, D3</p>
+      <a href="#" target="_blank" rel="noopener">Live • Repo →</a>
+    </article>
+  </div>
+</template>
+
+<!-- NOVOS templates: cada planeta abre um destes -->
+<template id="tpl-proj-starshop">
+  <h2>StarShop • E-commerce</h2>
+  <p>Catálogo com filtros, carrinho e checkout simulado. Lighthouse 95+ e navegação por teclado.</p>
+  <ul>
+    <li>React + TypeScript + Vite</li>
+    <li>Zustand para estado</li>
+    <li>Styled Components e CSS Vars</li>
+  </ul>
+  <p><a href="#" target="_blank" rel="noopener">Demo</a> • <a href="#" target="_blank" rel="noopener">Repositório</a></p>
+</template>
+
+<template id="tpl-proj-orbital-ui">
+  <h2>Orbital UI • Design System</h2>
+  <p>Componentes acessíveis com tokens, temas e documentação.</p>
+  <ul>
+    <li>Storybook + Radix UI</li>
+    <li>Testes visuais e unitários</li>
+    <li>Pacotes versionados</li>
+  </ul>
+  <p><a href="#" target="_blank" rel="noopener">Storybook</a> • <a href="#" target="_blank" rel="noopener">Repositório</a></p>
+</template>
+
+<template id="tpl-proj-spaceviz">
+  <h2>SpaceViz • Data viz</h2>
+  <p>Visualizações rápidas com Canvas/WebGL e transições suaves.</p>
+  <ul>
+    <li>regl/WebGL + D3</li>
+    <li>Layouts interativos</li>
+    <li>Foco em performance</li>
+  </ul>
+  <p><a href="#" target="_blank" rel="noopener">Live</a> • <a href="#" target="_blank" rel="noopener">Repositório</a></p>
+</template>
+
+</body></html>
