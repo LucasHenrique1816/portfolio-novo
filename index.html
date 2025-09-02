@@ -1,4 +1,7 @@
 <html lang="pt-BR"><head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
 <meta charset="UTF-8">
 <title>Portfolio Lucas Henrique</title>
 <style>
@@ -7,22 +10,16 @@
   #secret {
     position:absolute; top:50%; left:50%;
     transform:translate(-50%, -50%);
-    font-size:3em; color:rgba(255,255,255,0);
+    font-size:2em; color:rgba(255,255,255,0);
     text-shadow:0 0 10px rgba(255,255,255,0);
     transition:1s;
     pointer-events:none;
+    font-family: 'Audiowide', monospace;
   }
-  #secret.visible { color:white; text-shadow:0 0 20px #fff; }
+  #secret.visible {  color:#27e1ff; /* Example neon blue color */
+        text-shadow:var(--glow);
+        letter-spacing: 1px; /* Adjust as needed for the desired look */}
 
-  /* contador do secret */
-  #secret .countdown{
-    display:block;
-    margin-top:12px;
-    font-size:.5em;
-    letter-spacing:2px;
-    opacity:.95;
-    text-align:center;
-  }
 </style>
 <style>
 :root{
@@ -112,10 +109,16 @@ body{color:var(--text);font-family:Inter,Segoe UI,Roboto,Arial,Helvetica,sans-se
   display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px;
   border:1px solid rgba(39,225,255,.35); background:rgba(39,225,255,.06); margin:4px 6px 0 0;
 }
+.badge a{
+ color: #fff; font-weight:600; transition:.15s;
+}
 .grid{ display:grid; gap:12px }
 .grid.projetos{ grid-template-columns:repeat(auto-fit,minmax(220px,1fr)) }
 .card{
   padding:12px; border:1px solid rgba(39,225,255,.25); border-radius:10px; background:#0b1118;
+}
+.card a{
+  color: #fff; font-weight:600; transition:.15s;
 }
 .card h3{ margin:6px 0 8px; font-size:1rem }
 
@@ -185,6 +188,15 @@ planets[2].img.src = "planet3.png";
 planets[3].img.src = "planet4.png";
 planets[4].img.src = "planet5.png";
 
+// Opcional: nomes amigáveis por planeta (para o rótulo)
+const planetTitleByKey = {
+  'proj-starshop':    'JC Transportes',
+  'proj-orbital-ui':  'PegueiTudo',
+  'proj-spaceviz':    'Chá do Matteo',
+  'proj-orbital-ui1': 'Projetos',
+  'proj-spaceviz1':   'Projetos'
+};
+
 // Parallax do mouse (necessário para planetIndexAt)
 let parallaxMouse = { x:0, y:0 };
 window.addEventListener("mousemove", e=>{
@@ -202,19 +214,19 @@ function layoutPlanets(){
   // Desktop: TL, TR, BL, BR, centro-inferior
   const positionsDesktop = [
     { c: 0.12, r: 0.34 }, // top-left
-    { c: 0.88, r: 0.30 }, // top-right
+    { c: 0.83, r: 0.30 }, // top-right
     { c: 0.18, r: 0.78 }, // bottom-left
     { c: 0.84, r: 0.84 }, // bottom-right
-    { c: 0.56, r: 0.72 }  // centro inferior (fora do topo central)
+    { c: 0.56, r: 0.68 }  // centro inferior (fora do topo central)
   ];
 
   // Mobile: evita o topo (nave em ~20%), distribui laterais e base
   const positionsMobile = [
     { c: 0.14, r: 0.44 }, // upper-left
-    { c: 0.86, r: 0.40 }, // upper-right
+    { c: 0.76, r: 0.40 }, // upper-right
     { c: 0.18, r: 0.78 }, // bottom-left
     { c: 0.82, r: 0.86 }, // bottom-right
-    { c: 0.50, r: 0.90 }  // centro bem embaixo
+    { c: 0.50, r: 0.80 }  // centro bem embaixo
   ];
 
   const positions = isMobile ? positionsMobile : positionsDesktop;
@@ -296,17 +308,65 @@ canvas.addEventListener('click', (e)=>{
   }
 });
 
-// ================= ASTRONAUTA =================
-const astroImg = new Image();
-astroImg.src = "astronaut.png"; // fundo transparente
-let astro = { x:canvas.width/2, y:canvas.height/2, vx:2, vy:1.5, radius:35, size:100, angle:0, dAngle:0.01 };
+// Helper: rótulo do planeta no hover
+function drawPlanetLabel(x, y, text){
+  ctx.save();
+  ctx.font = '600 13px Segoe UI, Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
 
-// Mantém proporções do tamanho do astronauta de forma responsiva
+  const paddingX = 10, paddingY = 6;
+  const w = Math.ceil(ctx.measureText(text).width) + paddingX*2;
+  const h = 24;
+  let bx = Math.round(x - w/2);
+  let by = Math.round(y);
+
+  // Mantém o balão dentro da tela; se ultrapassar embaixo, inverte para cima
+  if (bx < 8) bx = 8;
+  if (bx + w > canvas.width - 8) bx = canvas.width - 8 - w;
+  if (by + h > canvas.height - 8) by = y - h - 14;
+
+  const r = 10;
+  ctx.fillStyle = 'rgba(11,17,24,0.85)';
+  ctx.strokeStyle = 'rgba(39,225,255,0.5)';
+  ctx.lineWidth = 1;
+
+  // rounded-rect
+  ctx.beginPath();
+  const x0=bx, y0=by, x1=bx+w, y1=by+h;
+  ctx.moveTo(x0+r, y0);
+  ctx.lineTo(x1-r, y0);
+  ctx.quadraticCurveTo(x1, y0, x1, y0+r);
+  ctx.lineTo(x1, y1-r);
+  ctx.quadraticCurveTo(x1, y1, x1-r, y1);
+  ctx.lineTo(x0+r, y1);
+  ctx.quadraticCurveTo(x0, y1, x0, y1-r);
+  ctx.lineTo(x0, y0+r);
+  ctx.quadraticCurveTo(x0, y0, x0+r, y0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = '#e6f1ff';
+  ctx.fillText(text, bx + w/2, by + paddingY - 2);
+  ctx.restore();
+}
+
+// Layout responsivo do astronauta (não chamar ainda; astro ainda não existe aqui)
 function layoutAstronaut(){
   const base = Math.min(canvas.width, canvas.height);
-  // escala suave, com limites
-  astro.radius = Math.round(Math.max(24, Math.min(56, base * 0.045)));
+  if (typeof astro !== 'undefined' && astro) {
+    astro.radius = Math.round(Math.max(24, Math.min(56, base * 0.045)));
+  }
 }
+
+// ================= ASTRONAUTA =================
+const astroImg = new Image();
+astroImg.decoding = 'async';
+astroImg.src = "astronaut.png";
+let astro = { x:canvas.width/2, y:canvas.height/2, vx:2, vy:1.5, radius:35, size:100, angle:0, dAngle:0.01 };
+
+// Agora sim: aplica layout e resize depois que astro existe
 layoutAstronaut();
 window.addEventListener('resize', layoutAstronaut);
 
@@ -336,6 +396,7 @@ window.addEventListener('resize', setMobileMode);
 
 // ================= NAVE (principal) =================
 const shipImg = new Image();
+shipImg.decoding = 'async';
 shipImg.src = 'nave.png';
 
 const ship = {
@@ -508,11 +569,16 @@ function update(){
       ctx.fill();
     }
     if (hoveredPlanetIndex === i){
+      // halo
       ctx.strokeStyle = 'rgba(39,225,255,.8)';
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.arc(px + p.size/2, py + p.size/2, p.size*0.55, 0, Math.PI*2);
       ctx.stroke();
+
+      // rótulo (somente no hover)
+      const label = planetTitleByKey[p.key] || p.label || 'Projeto';
+      drawPlanetLabel(px + p.size/2, py + p.size + 10, label);
     }
   });
 
@@ -605,12 +671,16 @@ function update(){
   requestAnimationFrame(update);
 }
 
+// Opcional: decoding assíncrono para planetas (melhora no mobile)
+planets.forEach(p => { if (p.img) p.img.decoding = 'async'; });
+
 // Inicia a animação mesmo se a imagem não carregar
-if (astroImg.complete) {
-  requestAnimationFrame(update);
-} else {
-  astroImg.onload = () => requestAnimationFrame(update);
-  astroImg.onerror = () => requestAnimationFrame(update);
+let started = false;
+function startOnce(){ if (!started){ started = true; requestAnimationFrame(update); } }
+if (astroImg.complete) { startOnce(); }
+else {
+  astroImg.onload = startOnce;
+  astroImg.onerror = startOnce;
 }
 
  // mensagem secreta
@@ -773,14 +843,16 @@ setInterval(()=>{
 <!-- Templates de conteúdo (edite com seus dados) -->
 <template id="tpl-sobre">
   <h2>Sobre mim</h2>
-  <p>Sou Lucas Henrique, desenvolvedor web front-end apaixonado por criar interfaces responsivas, animadas e acessíveis. Gosto de transformar ideias em experiências imersivas — como este cockpit — unindo design e código.</p>
-  <p>Hoje foco em React, TypeScript e animações com Canvas/WebGL. Tenho experiência com componentes reutilizáveis, design systems, performance e boas práticas de UX.</p>
+  <p>🚀 Minha missão é levar ideias além da gravidade comum. 
+    <br> Especialista em React, JavaScript, TypeScript, HTML5, CSS3 e APIs, construo soluções digitais que equilibram estética refinada, design responsivo e resolução prática de problemas, entregando experiências que impressionam em qualquer órbita.</p>
+  <p>🌌 Vamos explorar juntos novas possibilidades e transformar seu projeto em algo realmente extraordinário?</p>
   <div class="grid">
     <span class="badge">📍 Guarulhos, Brasil</span>
-    <span class="badge">💼 Disponível para CLT / PJ / Freelance</span>
+    <span class="badge">💼 Disponível para Trabalho, vamos concretizar o seu projeto</span>
     <span class="badge">✉️ luhenrique1@hotmail.com</span>
-    <span class="badge">🔗 https://linkedin.com/in/lucas-henrique0812</span>
-    <span class="badge">💻 https://github.com/LucasHenrique1816</span>
+    <span class="badge">🔗 <a href = "https://linkedin.com/in/lucas-henrique0812">https://linkedin.com/in/lucas-henrique0812</a></span>
+    <span class="badge">💻 <a href = "https://github.com/LucasHenrique1816">https://github.com/LucasHenrique1816</a></span>
+    <span class="badge">📱 <a href = "https://wa.me/5511989110812?text=Ola%2C%20quero%20saber%20mais%20sobre%20os%20servi%C3%A7os">(11)98911-0812</a></span>
   </div>
 </template>
 
@@ -807,6 +879,19 @@ setInterval(()=>{
     </article>
   </div>
 </template>
+<template id="tpl-tecnologias">
+  <h2>Tecnologias</h2>
+  <div class="grid">
+    <span class="badge">💻 HTML5 &amp; CSS3 (Tailwind, Bootstrap)</span>
+    <span class="badge">🚀 JavaScript (ES6+), TypeScript, React</span>
+    <span class="badge">🔗 PHP, Python, SQL, API REST</span>
+    <span class="badge">💡 Git, GitHub</span>
+    <span class="badge">🎨 Figma</span>
+    <span class="badge">🌐 Vercel, Netlify, Supabase</span>
+    <span class="badge">⚙️ Node.js, npm, yarn</span>
+    <span class="badge">⚡ SEO &amp; Performance Web</span>
+  </div>
+</template>  
 
 <!-- Modais dos planetas (3 projetos) -->
 <template id="tpl-proj-jc-transporte">
